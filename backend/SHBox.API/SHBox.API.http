@@ -1,0 +1,6 @@
+@SHBox.API_HostAddress = http://localhost:5051
+
+GET {{SHBox.API_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
