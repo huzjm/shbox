@@ -1,7 +1,15 @@
+using Microsoft.EntityFrameworkCore;
+using SHBox.API.Data;
+
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers();
 builder.Services.AddSignalR();
+
+builder.Services.AddDbContext<SHBoxDbContext>(options =>
+    options.UseSqlite(
+        builder.Configuration.GetConnectionString("DefaultConnection")));
+
 
 builder.Services.AddCors(options =>
 {
