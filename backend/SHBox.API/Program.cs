@@ -7,8 +7,16 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllers();
 builder.Services.AddSignalR();
 
-var databaseProvider = builder.Configuration["DatabaseProvider"] ?? "Sqlite";
-var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+var databaseProvider = builder.Configuration["DatabaseProvider"] ??
+    (builder.Configuration["DATABASE_URL"] is not null ? "Postgres" : "Sqlite");
+var connectionString = builder.Configuration["DATABASE_URL"]
+    ?? builder.Configuration.GetConnectionString("DefaultConnection")
+    ?? builder.Configuration["ConnectionStrings__DefaultConnection"];
+
+if (string.IsNullOrWhiteSpace(connectionString))
+{
+    connectionString = "Data Source=shbox.db";
+}
 
 builder.Services.AddDbContext<SHBoxDbContext>(options =>
 {
@@ -72,7 +80,8 @@ app.MapHub<SHBox.API.Hubs.ChatHub>("/chatHub");
 using (var scope = app.Services.CreateScope())
 {
     var context = scope.ServiceProvider.GetRequiredService<SHBoxDbContext>();
-    var provider = builder.Configuration["DatabaseProvider"] ?? "Sqlite";
+    var provider = builder.Configuration["DatabaseProvider"] ??
+        (builder.Configuration["DATABASE_URL"] is not null ? "Postgres" : "Sqlite");
 
     if (string.Equals(provider, "Postgres", StringComparison.OrdinalIgnoreCase) ||
         string.Equals(provider, "PostgreSQL", StringComparison.OrdinalIgnoreCase))
