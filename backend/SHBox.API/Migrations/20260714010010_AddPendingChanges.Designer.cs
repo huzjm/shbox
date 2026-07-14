@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using SHBox.API.Data;
 
@@ -10,9 +11,11 @@ using SHBox.API.Data;
 namespace SHBox.API.Migrations
 {
     [DbContext(typeof(SHBoxDbContext))]
-    partial class SHBoxDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260714010010_AddPendingChanges")]
+    partial class AddPendingChanges
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "9.0.16");

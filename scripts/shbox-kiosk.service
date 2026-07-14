@@ -1,0 +1,17 @@
+[Unit]
+Description=SHBox kiosk launcher
+After=graphical.target
+
+[Service]
+Type=simple
+User=pi
+Environment=DISPLAY=:0
+Environment=XAUTHORITY=/home/pi/.Xauthority
+Environment=SHBOX_SERVER_URL=http://localhost:5051
+Environment=SHBOX_DEVICE_ID=sakina-shbox
+WorkingDirectory=/home/pi/SHbox
+ExecStart=/bin/bash /home/pi/SHbox/scripts/shbox-kiosk.sh
+Restart=always
+
+[Install]
+WantedBy=graphical.target

@@ -1,0 +1,23 @@
+services:
+  - type: web
+    name: shbox-api
+    env: docker
+    dockerfilePath: ./backend/SHBox.API/Dockerfile
+    dockerContext: ./backend/SHBox.API
+    plan: free
+    healthCheckPath: /api/messages
+    envVars:
+      - key: ASPNETCORE_URLS
+        value: http://0.0.0.0:10000
+      - key: DatabaseProvider
+        value: Postgres
+      - key: ConnectionStrings__DefaultConnection
+        fromDatabase:
+          name: shbox-db
+          property: connectionString
+
+databases:
+  - name: shbox-db
+    plan: free
+    databaseName: shbox
+    user: shbox

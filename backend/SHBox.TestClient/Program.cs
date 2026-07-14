@@ -1,10 +1,7 @@
 ﻿using Microsoft.AspNetCore.SignalR.Client;
 
-Console.WriteLine("Starting SHBox client...");
-
 var connection = new HubConnectionBuilder()
     .WithUrl("http://localhost:5051/chatHub")
-    .WithAutomaticReconnect()
     .Build();
 
 connection.On<object>("ReceiveMessage", (message) =>
@@ -14,17 +11,15 @@ connection.On<object>("ReceiveMessage", (message) =>
 
 await connection.StartAsync();
 
-Console.WriteLine("Connected to SHBox ❤️");
-
-while (true)
+Console.WriteLine("Sending TakePhoto command...");
+await connection.SendAsync("SendCommand", new
 {
-    Console.Write("Message: ");
-    var text = Console.ReadLine();
+    type = "TakePhoto",
+    sender = "Huzefa",
+    data = "",
+    deviceId = "sakina-shbox",
+    status = "queued"
+});
 
-    await connection.SendAsync("SendMessage", new
-    {
-        Sender = "Huzefa",
-        Content = text,
-        Type = "text"
-    });
-}
+Console.WriteLine("Command sent.");
+Console.ReadLine();

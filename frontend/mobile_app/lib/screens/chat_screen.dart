@@ -1,179 +1,112 @@
 import 'package:flutter/material.dart';
-import 'package:mobile_app/models/message.dart';
-import 'package:mobile_app/widgets/message_bubble.dart';
-import 'package:signalr_netcore/signalr_client.dart';
-import 'package:mobile_app/services/message_service.dart';
 
-class ChatPage extends StatefulWidget {
-  const ChatPage({super.key});
+import '../models/message.dart';
+import '../services/message_service.dart';
+import '../services/signalr_service.dart';
+import '../widgets/message_bubble.dart';
+
+class ChatScreen extends StatefulWidget {
+  const ChatScreen({super.key});
 
   @override
-  State<ChatPage> createState() => _ChatPageState();
+  State<ChatScreen> createState() => _ChatScreenState();
 }
 
-class _ChatPageState extends State<ChatPage> {
-  late HubConnection connection;
-  final MessageService service = MessageService();
+class _ChatScreenState extends State<ChatScreen> {
+  bool connected = false;
+  final SignalRService signalR = SignalRService();
+  final MessageService api = MessageService();
   final TextEditingController controller = TextEditingController();
+  final ScrollController scrollController = ScrollController();
   List<Message> messages = [];
-  bool isConnected = false;
 
   @override
   void initState() {
     super.initState();
-
     loadMessages();
-
-    initSignalR();
+    setupSignalR();
   }
 
   Future<void> loadMessages() async {
-    final oldMessages = await service.getMessages();
-
+    final result = await api.getMessages();
+    if (!mounted) return;
     setState(() {
-      messages = oldMessages;
+      messages = result;
     });
   }
 
-  Future<void> initSignalR() async {
-    connection = HubConnectionBuilder()
-        .withUrl("http://192.168.1.78:5051/chatHub") // CHANGE PORT IF NEEDED
-        .withAutomaticReconnect()
-        .build();
-
-    connection.on("ReceiveMessage", (arguments) {
-      final data = Map<String, dynamic>.from(arguments![0] as Map);
-
+  Future<void> setupSignalR() async {
+    signalR.messages.listen((message) {
+      if (!mounted) return;
       setState(() {
-        messages.add(Message.fromJson(data));
+        messages.add(message);
+      });
+
+      Future.delayed(const Duration(milliseconds: 100), () {
+        if (!scrollController.hasClients) return;
+        scrollController.animateTo(
+          scrollController.position.maxScrollExtent,
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeOut,
+        );
       });
     });
 
-    // Note: onclose callback removed due to signature mismatch with package typedef.
-    // Connection state will be updated on successful start/failure and on send errors.
-
-    try {
-      await connection.start();
-      setState(() {
-        isConnected = true;
-        messages.add(
-          Message(
-            sender: 'Server',
-            content: 'Connected to SHBox ❤️',
-            type: 'text',
-            id: 0,
-            timestamp: DateTime.now(),
-          ),
-        );
-      });
-    } catch (e) {
-      setState(() {
-        isConnected = false;
-        messages.add(
-          Message(
-            sender: 'Server',
-            content: 'Connection failed: $e',
-            type: 'text',
-            id: 0,
-            timestamp: DateTime.now(),
-          ),
-        );
-      });
-    }
+    await signalR.connect();
+    if (!mounted) return;
+    setState(() {
+      connected = true;
+    });
   }
 
-  void sendMessage() async {
+  void send() {
     if (controller.text.isEmpty) return;
 
-    if (!isConnected) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Not connected to server')));
-      return;
-    }
-
-    try {
-      await connection.invoke(
-        "SendMessage",
-        args: [
-          {
-            'sender': 'Mobile',
-            'content': controller.text,
-            'type': 'text',
-            'timestamp': DateTime.now().toIso8601String(),
-          },
-        ],
-      );
-      controller.clear();
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Send failed: $e')));
-    }
-  }
-
-  @override
-  void dispose() {
-    connection.stop();
-    super.dispose();
+    signalR.sendMessage(controller.text);
+    controller.clear();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("SHBox Chat"),
-        actions: [
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12.0),
-            child: Center(
-              child: Text(
-                isConnected ? 'Online' : 'Offline',
-                style: const TextStyle(fontSize: 14),
-              ),
-            ),
-          ),
-        ],
-      ),
-      body: SafeArea(
-        top: false,
-        child: Column(
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Expanded(
-              child: ListView.builder(
-                itemCount: messages.length,
-                itemBuilder: (context, index) {
-                  return ListTile(
-                    title: MessageBubble(
-                      message: messages[index],
-                      isMe: messages[index].sender == "Huzefa",
-                    ),
-                  );
-                },
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: TextField(
-                      controller: controller,
-                      decoration: const InputDecoration(
-                        hintText: "Type message...",
-                      ),
-                    ),
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.send),
-                    onPressed: isConnected ? sendMessage : null,
-                  ),
-                ],
-              ),
+            const Text("SHBox ❤️"),
+            Text(
+              connected ? "Online" : "Connecting...",
+              style: const TextStyle(fontSize: 12),
             ),
           ],
         ),
+      ),
+      body: Column(
+        children: [
+          Expanded(
+            child: ListView.builder(
+              controller: scrollController,
+              itemCount: messages.length,
+              itemBuilder: (context, index) {
+                return MessageBubble(
+                  message: messages[index],
+                  isMe: messages[index].sender == "Huzefa",
+                );
+              },
+            ),
+          ),
+          Row(
+            children: [
+              Expanded(
+                child: TextField(
+                  controller: controller,
+                  decoration: const InputDecoration(hintText: "Message..."),
+                ),
+              ),
+              IconButton(icon: const Icon(Icons.send), onPressed: send),
+            ],
+          ),
+        ],
       ),
     );
   }

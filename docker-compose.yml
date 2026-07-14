@@ -1,0 +1,29 @@
+version: '3.9'
+services:
+  db:
+    image: postgres:16
+    container_name: shbox-postgres
+    environment:
+      POSTGRES_DB: shbox
+      POSTGRES_USER: shbox
+      POSTGRES_PASSWORD: shboxpass
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  api:
+    build:
+      context: ./backend/SHBox.API
+      dockerfile: Dockerfile
+    container_name: shbox-api
+    environment:
+      DatabaseProvider: Postgres
+      ConnectionStrings__DefaultConnection: Host=db;Port=5432;Database=shbox;Username=shbox;Password=shboxpass
+    ports:
+      - "5051:5051"
+    depends_on:
+      - db
+
+volumes:
+  postgres_data:

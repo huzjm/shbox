@@ -11,4 +11,6 @@ public class SHBoxDbContext : DbContext
     }
 
     public DbSet<Message> Messages { get; set; }
+    public DbSet<Photo> Photos { get; set; }
+    public DbSet<DeviceCommandRecord> DeviceCommandRecords { get; set; }
 }
