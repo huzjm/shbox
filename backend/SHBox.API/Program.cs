@@ -72,7 +72,17 @@ app.MapHub<SHBox.API.Hubs.ChatHub>("/chatHub");
 using (var scope = app.Services.CreateScope())
 {
     var context = scope.ServiceProvider.GetRequiredService<SHBoxDbContext>();
-    context.Database.Migrate();
+    var provider = builder.Configuration["DatabaseProvider"] ?? "Sqlite";
+
+    if (string.Equals(provider, "Postgres", StringComparison.OrdinalIgnoreCase) ||
+        string.Equals(provider, "PostgreSQL", StringComparison.OrdinalIgnoreCase))
+    {
+        context.Database.EnsureCreated();
+    }
+    else
+    {
+        context.Database.Migrate();
+    }
 }
 
 app.Run();

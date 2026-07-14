@@ -2,8 +2,8 @@ services:
   - type: web
     name: shbox-api
     env: docker
-    dockerfilePath: ./backend/SHBox.API/Dockerfile
-    dockerContext: ./backend/SHBox.API
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
     plan: free
     healthCheckPath: /api/messages
     envVars:
